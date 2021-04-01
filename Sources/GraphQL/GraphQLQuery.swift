@@ -14,10 +14,14 @@ struct GraphQLQuery {
     var arguments: [GraphQLArgument] = []
     var fields: [String] = []
     var subQueries: [GraphQLQuery] = []
+    var onQueries: [GraphQLQuery] = []
     
-    func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
+    func build(_ indent: Int = GraphQLQuery.defaultIndent, isOnQuery: Bool = false) throws -> String {
         
         var query = self.makeIndents(indent)
+        if isOnQuery {
+            query.append("... on ")
+        }
         query.append(self.from)
         if !self.arguments.isEmpty {
             query.append(" (\(self.arguments.map{ $0.build() }.joined(separator: ", ")))")
@@ -30,6 +34,11 @@ struct GraphQLQuery {
         if !self.subQueries.isEmpty {
             try self.subQueries.forEach { subquery in
                 query.append("\n\(try subquery.build(innerIndent))")
+            }
+        }
+        if !self.onQueries.isEmpty {
+            try self.onQueries.forEach { onQuery in
+                query.append("\n\(try onQuery.build(innerIndent, isOnQuery: true))")
             }
         }
         query.append("\n\(self.makeIndents(indent))}")
