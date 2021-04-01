@@ -13,18 +13,26 @@ struct GraphQLQuery {
     var from: String
     var arguments: [GraphQLArgument] = []
     var fields: [String] = []
+    var subQueries: [GraphQLQuery] = []
     
     func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
+        
         var query = self.makeIndents(indent)
         query.append(self.from)
         if !self.arguments.isEmpty {
             query.append(" (\(self.arguments.map{ $0.build() }.joined(separator: ", ")))")
         }
         query.append(" {")
+        let innerIndent = indent + GraphQLQuery.defaultIndent
         self.fields.forEach { field in
-            query.append("\n\(self.makeIndents(indent + GraphQLQuery.defaultIndent))\(field)")
+            query.append("\n\(self.makeIndents(innerIndent))\(field)")
         }
-        query.append("\n}")
+        if !self.subQueries.isEmpty {
+            try self.subQueries.forEach { subquery in
+                query.append("\n\(try subquery.build(innerIndent))")
+            }
+        }
+        query.append("\n\(self.makeIndents(indent))}")
         return query
     }
     
