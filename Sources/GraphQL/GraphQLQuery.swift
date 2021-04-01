@@ -10,14 +10,19 @@ import Foundation
 class GraphQLQuery {
     
     static let defaultIndent = 2
-    private let from: String
+    private var from: String = ""
     private var arguments: [GraphQLArgument] = []
     private var fields: [String] = []
     private var subQueries: [GraphQLQuery] = []
     private var onQueries: [GraphQLQuery] = []
     
-    init(from: String) {
+    init() {
+    }
+    
+    @discardableResult
+    func from(_ from: String) -> GraphQLQuery {
         self.from = from
+        return self
     }
     
     @discardableResult
