@@ -91,9 +91,15 @@ class GraphQLQuery {
         }
         query.append(self.from)
         if !self.arguments.isEmpty {
-            query.append(" (\(self.arguments.map{ $0.build() }.joined(separator: ", ")))")
+            query.append("(\(self.arguments.map{ $0.build() }.joined(separator: ", "))) ")
+        } else {
+            query.append(" ")
         }
-        query.append(" {")
+        
+        let addParenthesis = !self.fields.isEmpty || !self.subQueries.isEmpty || !self.onQueries.isEmpty
+        if addParenthesis {
+            query.append("{")
+        }
         let innerIndent = indent + GraphQLQuery.defaultIndent
         self.fields.forEach { field in
             query.append("\n\(self.makeIndents(innerIndent))\(field)")
@@ -108,7 +114,9 @@ class GraphQLQuery {
                 query.append("\n\(try onQuery.build(innerIndent, isOnQuery: true))")
             }
         }
-        query.append("\n\(self.makeIndents(indent))}")
+        if addParenthesis {
+            query.append("\n\(self.makeIndents(indent))}")
+        }
         return query
     }
     
