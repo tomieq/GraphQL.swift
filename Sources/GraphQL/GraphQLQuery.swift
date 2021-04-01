@@ -11,10 +11,14 @@ struct GraphQLQuery {
     
     static let defaultIndent = 2
     var from: String
+    var arguments: [GraphQLArgument] = []
     
     func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
         var query = self.makeIndents(indent)
         query.append(self.from)
+        if !self.arguments.isEmpty {
+            query.append(" (\(self.arguments.map{ $0.build() }.joined(separator: ", ")))")
+        }
         query.append(" {\n")
         query.append("}")
         return query
