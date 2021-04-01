@@ -7,16 +7,78 @@
 
 import Foundation
 
-struct GraphQLQuery {
+class GraphQLQuery {
     
     static let defaultIndent = 2
-    var from: String
-    var arguments: [GraphQLArgument] = []
-    var fields: [String] = []
-    var subQueries: [GraphQLQuery] = []
-    var onQueries: [GraphQLQuery] = []
+    private let from: String
+    private var arguments: [GraphQLArgument] = []
+    private var fields: [String] = []
+    private var subQueries: [GraphQLQuery] = []
+    private var onQueries: [GraphQLQuery] = []
     
-    func build(_ indent: Int = GraphQLQuery.defaultIndent, isOnQuery: Bool = false) throws -> String {
+    init(from: String) {
+        self.from = from
+    }
+    
+    @discardableResult
+    func argument(_ argument: GraphQLArgument) -> GraphQLQuery {
+        self.arguments.append(argument)
+        return self
+    }
+    
+    @discardableResult
+    func add(arguments: [GraphQLArgument]) -> GraphQLQuery {
+      self.arguments += arguments
+      return self
+    }
+    
+    @discardableResult
+    func argument(_ key: String, value: Any) -> GraphQLQuery {
+        self.arguments.append(GraphQLArgument(key: key, value: value))
+        return self
+    }
+    
+    @discardableResult
+    func field(_ field: String) -> GraphQLQuery {
+        self.fields.append(field)
+        return self
+    }
+    
+    @discardableResult
+    func fields(_ fields: [String]) -> GraphQLQuery {
+        self.fields += fields
+        return self
+    }
+    
+    @discardableResult
+    func subQuery(_ subQuery: GraphQLQuery) -> GraphQLQuery {
+        self.subQueries.append(subQuery)
+        return self
+    }
+    
+    @discardableResult
+    func add(subQueries: [GraphQLQuery]) -> GraphQLQuery {
+        self.subQueries += subQueries
+        return self
+    }
+    
+    @discardableResult
+    func onQuery(_ onQuery: GraphQLQuery) -> GraphQLQuery {
+        self.onQueries.append(onQuery)
+        return self
+    }
+    
+    @discardableResult
+    func add(onQueries: [GraphQLQuery]) -> GraphQLQuery {
+        self.onQueries += onQueries
+        return self
+    }
+    
+    func build() throws -> String {
+        return try self.build(0)
+    }
+    
+    private func build(_ indent: Int = GraphQLQuery.defaultIndent, isOnQuery: Bool = false) throws -> String {
         
         var query = self.makeIndents(indent)
         if isOnQuery {
