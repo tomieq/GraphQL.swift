@@ -7,14 +7,14 @@
 
 import Foundation
 
-class GraphQLQuery {
+public class GraphQLQuery {
     
     static let defaultIndent = 2
     private var from: String = ""
     private var arguments: [GraphQLArgument] = []
     private var fields: [String] = []
     private var subQueries: [GraphQLQuery] = []
-    private var onQueries: [GraphQLQuery] = []
+    private var inlineFragments: [OptionalGraphQLFields] = []
     
     init() {
     }
@@ -32,7 +32,7 @@ class GraphQLQuery {
     }
     
     @discardableResult
-    func add(arguments: [GraphQLArgument]) -> GraphQLQuery {
+    func arguments(_ arguments: [GraphQLArgument]) -> GraphQLQuery {
       self.arguments += arguments
       return self
     }
@@ -44,19 +44,19 @@ class GraphQLQuery {
     }
     
     @discardableResult
-    func field(_ field: String) -> GraphQLQuery {
+    func select(_ field: String) -> GraphQLQuery {
         self.fields.append(field)
         return self
     }
     
     @discardableResult
-    func fields(_ fields: [String]) -> GraphQLQuery {
+    func select(_ fields: [String]) -> GraphQLQuery {
         self.fields += fields
         return self
     }
     
     @discardableResult
-    func subQuery(_ subQuery: GraphQLQuery) -> GraphQLQuery {
+    func select(_ subQuery: GraphQLQuery) -> GraphQLQuery {
         self.subQueries.append(subQuery)
         return self
     }
@@ -68,14 +68,8 @@ class GraphQLQuery {
     }
     
     @discardableResult
-    func onQuery(_ onQuery: GraphQLQuery) -> GraphQLQuery {
-        self.onQueries.append(onQuery)
-        return self
-    }
-    
-    @discardableResult
-    func add(onQueries: [GraphQLQuery]) -> GraphQLQuery {
-        self.onQueries += onQueries
+    func select(_ onQuery: OptionalGraphQLFields) -> GraphQLQuery {
+        self.inlineFragments.append(onQuery)
         return self
     }
     
@@ -83,20 +77,21 @@ class GraphQLQuery {
         return try self.build(0)
     }
     
-    private func build(_ indent: Int = GraphQLQuery.defaultIndent, isOnQuery: Bool = false) throws -> String {
+    private func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
         
         var query = self.makeIndents(indent)
-        if isOnQuery {
-            query.append("... on ")
+        if let inlineFragment = self as? OptionalGraphQLFields {
+            query.append("... on \(inlineFragment.objectType)")
+        } else {
+            query.append(self.from)
         }
-        query.append(self.from)
         if !self.arguments.isEmpty {
             query.append("(\(self.arguments.map{ $0.build() }.joined(separator: ", "))) ")
         } else {
             query.append(" ")
         }
         
-        let addParenthesis = !self.fields.isEmpty || !self.subQueries.isEmpty || !self.onQueries.isEmpty
+        let addParenthesis = !self.fields.isEmpty || !self.subQueries.isEmpty || !self.inlineFragments.isEmpty
         if addParenthesis {
             query.append("{")
         }
@@ -109,9 +104,9 @@ class GraphQLQuery {
                 query.append("\n\(try subquery.build(innerIndent))")
             }
         }
-        if !self.onQueries.isEmpty {
-            try self.onQueries.forEach { onQuery in
-                query.append("\n\(try onQuery.build(innerIndent, isOnQuery: true))")
+        if !self.inlineFragments.isEmpty {
+            try self.inlineFragments.forEach { inlineFragment in
+                query.append("\n\(try inlineFragment.build(innerIndent))")
             }
         }
         if addParenthesis {
@@ -123,5 +118,15 @@ class GraphQLQuery {
     private func makeIndents(_ depth: Int) -> String {
         guard depth > 0 else { return "" }
         return (0...depth).map{_ in " "}.joined()
+    }
+}
+
+public class OptionalGraphQLFields: GraphQLQuery {
+    
+    fileprivate let objectType: String
+    
+    init(whenResponseIs objectType: String) {
+        self.objectType = objectType
+        super.init()
     }
 }
