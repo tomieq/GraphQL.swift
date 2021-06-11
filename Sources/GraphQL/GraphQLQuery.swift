@@ -7,16 +7,26 @@
 
 import Foundation
 
+enum GraphQLQueryType: String {
+    case shorthand
+    case query
+    case mutation
+    case subscription
+}
+
 public class GraphQLQuery {
     
     static let defaultIndent = 2
+    private let type: GraphQLQueryType
     private var from: String = ""
+    private var variable: [GraphQLArgument] = []
     private var arguments: [GraphQLArgument] = []
     private var fields: [String] = []
     private var subQueries: [GraphQLQuery] = []
     private var inlineFragments: [OptionalGraphQLFields] = []
     
-    init() {
+    init(_ type: GraphQLQueryType = .shorthand) {
+        self.type = type
     }
     
     @discardableResult
@@ -35,6 +45,12 @@ public class GraphQLQuery {
     func arguments(_ arguments: [GraphQLArgument]) -> GraphQLQuery {
       self.arguments += arguments
       return self
+    }
+    
+    @discardableResult
+    func variable(_ key: String, type: String, default defaultValue: Any? = nil) -> GraphQLQuery {
+        self.arguments.append(GraphQLArgument(key: "$\(key)", value: "\(type)\(defaultValue == nil ? "" : " = \(defaultValue!)")"))
+        return self
     }
     
     @discardableResult
@@ -62,14 +78,34 @@ public class GraphQLQuery {
     }
     
     @discardableResult
-    func add(subQueries: [GraphQLQuery]) -> GraphQLQuery {
+    func select(_ subQueries: [GraphQLQuery]) -> GraphQLQuery {
         self.subQueries += subQueries
         return self
     }
     
+    func select(_ inlineFragment: OptionalGraphQLFields) -> GraphQLQuery {
+        self.inlineFragments.append(inlineFragment)
+        return self
+    }
+    
     @discardableResult
-    func select(_ onQuery: OptionalGraphQLFields) -> GraphQLQuery {
-        self.inlineFragments.append(onQuery)
+    func select(path: String, separator: String.Element) -> GraphQLQuery {
+        guard path.contains(separator) else {
+            return self.select(path)
+        }
+        var nestedQuery: GraphQLQuery = self
+        let components = path.split(separator: separator)
+        for i in (0...components.count-2) {
+            let from = "\(components[i])"
+            if let subquery = (nestedQuery.subQueries.filter{ $0.from == from }.first) {
+                nestedQuery = subquery
+            } else {
+                let subquery = GraphQLQuery().from(from)
+                nestedQuery.select(subquery)
+                nestedQuery = subquery
+            }
+        }
+        nestedQuery.select("\(components.last ?? "-")")
         return self
     }
     
@@ -80,6 +116,12 @@ public class GraphQLQuery {
     private func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
         
         var query = self.makeIndents(indent)
+        switch self.type {
+        case .shorthand:
+            break
+        default:
+            query.append("\(self.type.rawValue) ")
+        }
         if let inlineFragment = self as? OptionalGraphQLFields {
             query.append("... on \(inlineFragment.objectType)")
         } else {
