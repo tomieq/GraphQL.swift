@@ -182,3 +182,14 @@ public class OptionalGraphQLFields: GraphQLQuery {
         super.init()
     }
 }
+
+extension GraphQLQuery: Comparable {
+    public static func == (lhs: GraphQLQuery, rhs: GraphQLQuery) -> Bool {
+        return lhs.from == rhs.from && lhs.fields.sorted() == rhs.fields.sorted()
+    }
+    
+    public static func < (lhs: GraphQLQuery, rhs: GraphQLQuery) -> Bool {
+        return lhs.from < rhs.from
+    }
+    
+}
