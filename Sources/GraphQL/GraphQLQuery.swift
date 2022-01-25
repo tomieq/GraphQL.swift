@@ -24,7 +24,7 @@ public class GraphQLQuery {
     private var fields: [String] = []
     private var subQueries: [GraphQLQuery] = []
     private var inlineFragments: [OptionalGraphQLFields] = []
-    
+
     var isValid: Bool {
         return !(self.fields.isEmpty && self.subQueries.isEmpty && self.inlineFragments.isEmpty)
     }
@@ -38,7 +38,7 @@ public class GraphQLQuery {
         self.from = from
         return self
     }
-        
+
     @discardableResult
     func from(_ from: String, alias: String) -> GraphQLQuery {
         self.from = "\(alias): \(from)"
@@ -50,19 +50,19 @@ public class GraphQLQuery {
         self.arguments.append(argument)
         return self
     }
-    
+
     @discardableResult
     func arguments(_ arguments: [GraphQLArgument]) -> GraphQLQuery {
       self.arguments += arguments
       return self
     }
-    
+
     @discardableResult
     func variable(_ key: String, type: String, default defaultValue: Any? = nil) -> GraphQLQuery {
         self.arguments.append(GraphQLArgument(key: "$\(key)", value: "\(type)\(defaultValue == nil ? "" : " = \(defaultValue!)")"))
         return self
     }
-    
+
     @discardableResult
     func argument(_ key: String, value: Any) -> GraphQLQuery {
         self.arguments.append(GraphQLArgument(key: key, value: value))
@@ -83,23 +83,33 @@ public class GraphQLQuery {
     
     @discardableResult
     func select(_ subQuery: GraphQLQuery) -> GraphQLQuery {
-        self.subQueries.append(subQuery)
+        guard subQuery.isValid else { return self }
+
+        if let inlineQuery = subQuery as? OptionalGraphQLFields {
+            if let existingSubquery = (self.inlineFragments.first{ $0.objectType == inlineQuery.objectType }) {
+                existingSubquery.merge(inlineQuery)
+            } else {
+                self.inlineFragments.append(inlineQuery)
+            }
+            return self
+        }
+
+        if let existingSubquery = (self.subQueries.first{ $0.from == subQuery.from }) {
+            existingSubquery.merge(subQuery)
+        } else {
+            self.subQueries.append(subQuery)
+        }
         return self
     }
     
     @discardableResult
     func select(_ subQueries: [GraphQLQuery]) -> GraphQLQuery {
-        self.subQueries += subQueries
-        return self
-    }
-    
-    func select(_ inlineFragment: OptionalGraphQLFields) -> GraphQLQuery {
-        self.inlineFragments.append(inlineFragment)
+        subQueries.forEach { self.select($0) }
         return self
     }
     
     @discardableResult
-    func select(path: String, separator: String.Element) -> GraphQLQuery {
+    func select(path: String, separator: String.Element = ".") -> GraphQLQuery {
         guard path.contains(separator) else {
             return self.select(path)
         }
@@ -111,12 +121,18 @@ public class GraphQLQuery {
                 nestedQuery = subquery
             } else {
                 let subquery = GraphQLQuery().from(from)
-                nestedQuery.select(subquery)
+                nestedQuery.subQueries.append(subquery)
                 nestedQuery = subquery
             }
         }
         nestedQuery.select("\(components.last ?? "-")")
         return self
+    }
+    
+    private func merge(_ other: GraphQLQuery) {
+        self.select(other.fields)
+        self.select(other.subQueries)
+        self.inlineFragments += other.inlineFragments
     }
     
     func build() throws -> String {
