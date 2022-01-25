@@ -166,16 +166,16 @@ public class GraphQLQuery {
             query.append("{")
         }
         let innerIndent = indent + GraphQLQuery.defaultIndent
-        self.fields.forEach { field in
+        self.fields.sorted().forEach { field in
             query.append("\n\(self.makeIndents(innerIndent))\(field)")
         }
         if !self.subQueries.isEmpty {
-            try self.subQueries.forEach { subquery in
+            try self.subQueries.sorted().forEach { subquery in
                 query.append("\n\(try subquery.build(innerIndent))")
             }
         }
         if !self.inlineFragments.isEmpty {
-            try self.inlineFragments.forEach { inlineFragment in
+            try self.inlineFragments.sorted().forEach { inlineFragment in
                 query.append("\n\(try inlineFragment.build(innerIndent))")
             }
         }
