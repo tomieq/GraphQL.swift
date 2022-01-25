@@ -38,7 +38,13 @@ public class GraphQLQuery {
         self.from = from
         return self
     }
-    
+        
+    @discardableResult
+    func from(_ from: String, alias: String) -> GraphQLQuery {
+        self.from = "\(alias): \(from)"
+        return self
+    }
+
     @discardableResult
     func argument(_ argument: GraphQLArgument) -> GraphQLQuery {
         self.arguments.append(argument)
