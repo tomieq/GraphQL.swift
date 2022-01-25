@@ -15,7 +15,19 @@ final class GraphQLTests: XCTestCase {
         let query = GraphQLQuery(.query)
             .select("id")
             .select("name")
-        
+        do {
+            let output = try query.build()
+            XCTAssertEqual(output.condenseWhitespace(), "query { id name }".condenseWhitespace())
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+    
+    func testRemovingDuplicatedFields() throws {
+        let query = GraphQLQuery(.query)
+            .select("id")
+            .select("id")
+            .select("name")
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { id name }".condenseWhitespace())

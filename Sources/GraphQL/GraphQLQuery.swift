@@ -71,13 +71,15 @@ public class GraphQLQuery {
     
     @discardableResult
     func select(_ field: String) -> GraphQLQuery {
-        self.fields.append(field)
+        if !self.fields.contains(field) {
+            self.fields.append(field)
+        }
         return self
     }
     
     @discardableResult
     func select(_ fields: [String]) -> GraphQLQuery {
-        self.fields += fields
+        fields.forEach { self.select($0) }
         return self
     }
     
