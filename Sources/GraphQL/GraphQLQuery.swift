@@ -25,6 +25,10 @@ public class GraphQLQuery {
     private var subQueries: [GraphQLQuery] = []
     private var inlineFragments: [OptionalGraphQLFields] = []
     
+    var isValid: Bool {
+        return !(self.fields.isEmpty && self.subQueries.isEmpty && self.inlineFragments.isEmpty)
+    }
+
     init(_ type: GraphQLQueryType = .shorthand) {
         self.type = type
     }
