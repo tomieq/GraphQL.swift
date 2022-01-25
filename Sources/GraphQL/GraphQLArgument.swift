@@ -34,7 +34,7 @@ public struct GraphQLArgument {
 /*
  Use GraphQLRawString when you want your String without quote signs
  */
-struct GraphQLRawString {
+public struct GraphQLRawString {
     let string: String
     
     init(_ string: String) {

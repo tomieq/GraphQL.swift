@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum GraphQLQueryType: String {
+public enum GraphQLQueryType: String {
     case shorthand
     case query
     case mutation
