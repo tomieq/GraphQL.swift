@@ -65,6 +65,18 @@ final class GraphQLTests: XCTestCase {
         }
     }
     
+    func testMultipleVariadicFields() throws {
+        let query = GraphQLQuery(.query)
+            .select("id", "color", "brand")
+        
+        do {
+            let output = try query.build()
+            XCTAssertEqual(output.condenseWhitespace(), "query { brand color id }".condenseWhitespace())
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+    
     func testMultipleFieldsDuplicated() throws {
         let query = GraphQLQuery(.query)
             .select(["id", "color", "id", "brand"])

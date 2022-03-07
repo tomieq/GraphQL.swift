@@ -82,6 +82,12 @@ public class GraphQLQuery {
         fields.forEach { self.select($0) }
         return self
     }
+
+    @discardableResult
+    func select(_ fields: String...) -> GraphQLQuery {
+        self.fields += fields
+        return self
+    }
     
     @discardableResult
     func select(_ subQuery: GraphQLQuery) -> GraphQLQuery {
