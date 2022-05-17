@@ -135,6 +135,24 @@ query  {
    }
 }
 ```
+TIP: Use GraphQLRawString if you need String without quota:
+```
+let query = GraphQLQuery(.query)
+    .select("id")
+    .select(GraphQLQuery()
+        .from("news")
+        .argument("context", value: GraphQLRawString("{source: DBLink}"))
+        .select("name"))
+```
+Output:
+```
+query  {
+   id
+   news(context: {source: DBLink}) {
+     name
+   }
+}
+```
 ### Alias support
 ```
         let query = GraphQLQuery(.query)
