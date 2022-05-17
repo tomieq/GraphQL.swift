@@ -1,6 +1,6 @@
 //
 //  GraphQLTests.swift
-//  
+//
 //
 //  Created by Tomasz Kucharski on 25/01/2022.
 //
@@ -10,7 +10,6 @@ import XCTest
 @testable import GraphQL
 
 final class GraphQLTests: XCTestCase {
-    
     func testBasicQuery() throws {
         let query = GraphQLQuery(.query)
             .select("id")
@@ -22,7 +21,7 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testRemovingDuplicatedFields() throws {
         let query = GraphQLQuery(.query)
             .select("id")
@@ -35,28 +34,29 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testSubQuery() throws {
         let query = GraphQLQuery(.query)
             .select("id")
             .select(GraphQLQuery()
-                        .from("device")
-                        .select("name")
-                        .select("uuid")
+                .from("device")
+                .select("name")
+                .select("uuid")
             )
-        
+
         do {
             let output = try query.build()
+            print(output)
             XCTAssertEqual(output.condenseWhitespace(), "query { id device { name uuid } }".condenseWhitespace())
         } catch {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testMultipleFields() throws {
         let query = GraphQLQuery(.query)
             .select(["id", "color", "brand"])
-        
+
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { brand color id }".condenseWhitespace())
@@ -64,11 +64,11 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testMultipleVariadicFields() throws {
         let query = GraphQLQuery(.query)
             .select("id", "color", "brand")
-        
+
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { brand color id }".condenseWhitespace())
@@ -76,11 +76,11 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testMultipleFieldsDuplicated() throws {
         let query = GraphQLQuery(.query)
             .select(["id", "color", "id", "brand"])
-        
+
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { brand color id }".condenseWhitespace())
@@ -93,7 +93,7 @@ final class GraphQLTests: XCTestCase {
         let query = GraphQLQuery(.query)
             .select("id")
             .select(OptionalGraphQLFields(whenResponseIs: "Modem").select("id"))
-        
+
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { id ... on Modem { id } }".condenseWhitespace())
@@ -101,11 +101,11 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testPathSelect() throws {
         let query = GraphQLQuery(.query)
             .select(path: "device.brand.name", separator: ".")
-        
+
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { device { brand { name } } }".condenseWhitespace())
@@ -113,7 +113,7 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testSubqueryMerging() throws {
         let query = GraphQLQuery(.query)
             .select(GraphQLQuery().from("model").select("id"))
@@ -125,7 +125,7 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testInlineFragmentsMerging() throws {
         let query = GraphQLQuery(.query)
             .select(OptionalGraphQLFields(whenResponseIs: "GFX").select("id"))
@@ -137,14 +137,14 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testSubQueryArgument() throws {
         let query = GraphQLQuery(.query)
             .select("id")
             .select(GraphQLQuery()
-                        .from("logicalFunctions")
-                        .argument("rsql", value: "type==Car")
-                        .select("name"))
+                .from("logicalFunctions")
+                .argument("rsql", value: "type==Car")
+                .select("name"))
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { id  logicalFunctions(rsql: \"type==Car\") { name } }".condenseWhitespace())
@@ -152,14 +152,14 @@ final class GraphQLTests: XCTestCase {
             XCTFail(error.localizedDescription)
         }
     }
-    
+
     func testFromAlias() throws {
         let query = GraphQLQuery(.query)
             .select("id")
             .select(GraphQLQuery()
-                        .from("logicalFunctions", alias: "functions")
-                        .argument("rsql", value: "type==Car")
-                        .select("name"))
+                .from("logicalFunctions", alias: "functions")
+                .argument("rsql", value: "type==Car")
+                .select("name"))
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { id  functions: logicalFunctions(rsql: \"type==Car\") { name } }".condenseWhitespace())

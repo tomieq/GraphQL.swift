@@ -1,6 +1,6 @@
 //
 //  GraphQLQuery.swift
-//  
+//
 //
 //  Created by Tomasz Kucharski on 01/04/2021.
 //
@@ -15,7 +15,6 @@ public enum GraphQLQueryType: String {
 }
 
 public class GraphQLQuery {
-    
     static let defaultIndent = 2
     private let type: GraphQLQueryType
     private var from: String = ""
@@ -32,7 +31,7 @@ public class GraphQLQuery {
     init(_ type: GraphQLQueryType = .shorthand) {
         self.type = type
     }
-    
+
     @discardableResult
     func from(_ from: String) -> GraphQLQuery {
         self.from = from
@@ -53,8 +52,8 @@ public class GraphQLQuery {
 
     @discardableResult
     func arguments(_ arguments: [GraphQLArgument]) -> GraphQLQuery {
-      self.arguments += arguments
-      return self
+        self.arguments += arguments
+        return self
     }
 
     @discardableResult
@@ -68,7 +67,7 @@ public class GraphQLQuery {
         self.arguments.append(GraphQLArgument(key: key, value: value))
         return self
     }
-    
+
     @discardableResult
     func select(_ field: String) -> GraphQLQuery {
         if !self.fields.contains(field) {
@@ -76,7 +75,7 @@ public class GraphQLQuery {
         }
         return self
     }
-    
+
     @discardableResult
     func select(_ fields: [String]) -> GraphQLQuery {
         fields.forEach { self.select($0) }
@@ -88,7 +87,7 @@ public class GraphQLQuery {
         self.fields += fields
         return self
     }
-    
+
     @discardableResult
     func select(_ subQuery: GraphQLQuery) -> GraphQLQuery {
         guard subQuery.isValid else { return self }
@@ -109,13 +108,13 @@ public class GraphQLQuery {
         }
         return self
     }
-    
+
     @discardableResult
     func select(_ subQueries: [GraphQLQuery]) -> GraphQLQuery {
         subQueries.forEach { self.select($0) }
         return self
     }
-    
+
     @discardableResult
     func select(path: String, separator: String.Element = ".") -> GraphQLQuery {
         guard path.contains(separator) else {
@@ -123,7 +122,7 @@ public class GraphQLQuery {
         }
         var nestedQuery: GraphQLQuery = self
         let components = path.split(separator: separator)
-        for i in (0...components.count-2) {
+        for i in 0...components.count - 2 {
             let from = "\(components[i])"
             if let subquery = (nestedQuery.subQueries.filter{ $0.from == from }.first) {
                 nestedQuery = subquery
@@ -136,19 +135,18 @@ public class GraphQLQuery {
         nestedQuery.select("\(components.last ?? "-")")
         return self
     }
-    
+
     private func merge(_ other: GraphQLQuery) {
         self.select(other.fields)
         self.select(other.subQueries)
         self.inlineFragments += other.inlineFragments
     }
-    
+
     func build() throws -> String {
         return try self.build(0)
     }
-    
+
     private func build(_ indent: Int = GraphQLQuery.defaultIndent) throws -> String {
-        
         var query = self.makeIndents(indent)
         switch self.type {
         case .shorthand:
@@ -166,7 +164,7 @@ public class GraphQLQuery {
         } else {
             query.append(" ")
         }
-        
+
         let addParenthesis = !self.fields.isEmpty || !self.subQueries.isEmpty || !self.inlineFragments.isEmpty
         if addParenthesis {
             query.append("{")
@@ -190,17 +188,16 @@ public class GraphQLQuery {
         }
         return query
     }
-    
+
     private func makeIndents(_ depth: Int) -> String {
         guard depth > 0 else { return "" }
-        return (0...depth).map{_ in " "}.joined()
+        return (0...depth).map{ _ in " " }.joined()
     }
 }
 
 public class OptionalGraphQLFields: GraphQLQuery {
-    
     fileprivate let objectType: String
-    
+
     init(whenResponseIs objectType: String) {
         self.objectType = objectType
         super.init()
@@ -211,9 +208,8 @@ extension GraphQLQuery: Comparable {
     public static func == (lhs: GraphQLQuery, rhs: GraphQLQuery) -> Bool {
         return lhs.from == rhs.from && lhs.fields.sorted() == rhs.fields.sorted()
     }
-    
+
     public static func < (lhs: GraphQLQuery, rhs: GraphQLQuery) -> Bool {
         return lhs.from < rhs.from
     }
-    
 }
