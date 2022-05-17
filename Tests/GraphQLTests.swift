@@ -43,10 +43,8 @@ final class GraphQLTests: XCTestCase {
                 .select("name")
                 .select("uuid")
             )
-
         do {
             let output = try query.build()
-            print(output)
             XCTAssertEqual(output.condenseWhitespace(), "query { id device { name uuid } }".condenseWhitespace())
         } catch {
             XCTFail(error.localizedDescription)
@@ -80,7 +78,6 @@ final class GraphQLTests: XCTestCase {
     func testMultipleFieldsDuplicated() throws {
         let query = GraphQLQuery(.query)
             .select(["id", "color", "id", "brand"])
-
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { brand color id }".condenseWhitespace())
@@ -105,7 +102,6 @@ final class GraphQLTests: XCTestCase {
     func testPathSelect() throws {
         let query = GraphQLQuery(.query)
             .select(path: "device.brand.name", separator: ".")
-
         do {
             let output = try query.build()
             XCTAssertEqual(output.condenseWhitespace(), "query { device { brand { name } } }".condenseWhitespace())
